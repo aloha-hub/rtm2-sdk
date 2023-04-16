@@ -73,6 +73,8 @@ func getUriFromReq(req interface{}) int32 {
 		return UriLockRelease
 	case *base.LockRevokeReq:
 		return UriLockRevoke
+	case base.TokenPrivilegeExpire:
+		return UriTokenPrivilegeExpire
 	default:
 		return 0
 	}

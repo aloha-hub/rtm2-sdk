@@ -47,11 +47,12 @@ const (
 	UriLockSet     = 110
 	UriLockEvent   = 111
 
+	UriTokenPrivilegeExpire = 112
+
 	UriCommonRequest = 0xFFE
 	UriCommonResp    = 0xFFF
 
 	invalidUri = -1
-	unknownErr = 999
 
 	kParamSidecarEndpoint = "golang_sidecar_endpoint"
 	kParamSidecarPort     = "golang_sidecar_port"
@@ -75,7 +76,7 @@ const (
 
 func IsEvent(uri int32) bool {
 	switch uri {
-	case UriMessageEvent, UriStreamEvent, UriStreamTopicEvent, UriStorageChannelEvent, UriStorageUserEvent, UriConnectStateChange, UriPresenceEvent, UriLockEvent:
+	case UriMessageEvent, UriStreamEvent, UriStreamTopicEvent, UriStorageChannelEvent, UriStorageUserEvent, UriConnectStateChange, UriPresenceEvent, UriLockEvent, UriTokenPrivilegeExpire:
 		return true
 	}
 	return false

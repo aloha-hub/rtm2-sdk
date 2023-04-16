@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go.uber.org/zap"
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -25,6 +26,9 @@ type rtmSidecar struct {
 func (s *rtmSidecar) Start() <-chan error {
 	p := exec.Command(s.cmd, s.args...)
 	s.process = p
+	// capture sub process std err and std out
+	p.Stderr = os.Stderr
+	p.Stdout = os.Stdout
 	go s.loop()
 	return s.errChan
 }
