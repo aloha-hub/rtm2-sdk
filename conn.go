@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/cloudwego/netpoll"
 	"github.com/tevino/abool/v2"
-	"github.com/tomasliu-agora/rtm2"
 	"go.uber.org/zap"
 	"sync"
 	"sync/atomic"
@@ -94,6 +93,9 @@ func (c *connection) loop() {
 		c.cancel()
 		if err != nil {
 			c.onError(err)
+		}
+		if c.conn != nil {
+			_ = c.conn.Close()
 		}
 	}()
 
@@ -226,7 +228,7 @@ func (c *connection) onClose(connection netpoll.Connection) error {
 	}
 
 	c.lg.Info("Connection closed")
-	c.onError(rtm2.ErrorFromCode(unknownErr))
+	c.onError(ERR_DISCONNECTED)
 	c.cancel()
 	c.requests.Range(func(key, value interface{}) bool {
 		seqid := key.(int64)

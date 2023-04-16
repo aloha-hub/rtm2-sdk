@@ -22,8 +22,14 @@ github.com/tevino/abool/v2 v2.1.0 h1:7w+Vf9f/5gmKT4m4qkayb33/92M+Um45F2BkHOR+L/c
 github.com/tevino/abool/v2 v2.1.0/go.mod h1:+Lmlqk6bHDWHqN1cbxqhwEAwMPXgc8I1SDEamtseuXY=
 github.com/tomasliu-agora/rtm2 v0.0.0-20230331144355-55773e1bef61 h1:xmNzZP/5pqIT9SehhfAiJjKl0xuFP44evhxmE6VuvJA=
 github.com/tomasliu-agora/rtm2 v0.0.0-20230331144355-55773e1bef61/go.mod h1:DVdv0buAgna/tY/2cKk/6n4k7d+NIXQsaXeSlFuqW8I=
+github.com/tomasliu-agora/rtm2 v0.0.2-0.20230414075759-bbc41c544f7a h1:IlQBD/DvUhv1zatBK9aTDqP89VD5tHifgzN8ignZhoU=
+github.com/tomasliu-agora/rtm2 v0.0.2-0.20230414075759-bbc41c544f7a/go.mod h1:DVdv0buAgna/tY/2cKk/6n4k7d+NIXQsaXeSlFuqW8I=
 github.com/tomasliu-agora/rtm2-base v0.0.0-20230331151753-b5e7c8166922 h1:5C4STHgUHRiOpq8Adf1p8crWSpRgHDjSV6tTdxK2n08=
 github.com/tomasliu-agora/rtm2-base v0.0.0-20230331151753-b5e7c8166922/go.mod h1:NDOqW/Dzvizux4/D222IIxWIe3qe6kdQNwG9UBt/WVI=
+github.com/tomasliu-agora/rtm2-base v0.0.0-20230414081154-3285cd2230bc h1:qi/VQ/MixWMyAA0qhuB88K2OM96YdDwLCgxBO5+wDco=
+github.com/tomasliu-agora/rtm2-base v0.0.0-20230414081154-3285cd2230bc/go.mod h1:g6DXT0Xrpjdn6/sODckMvJE22d/on/ojPGCsgzS49+g=
+github.com/tomasliu-agora/rtm2-base v0.0.0-20230416090455-1d6c8f3ba61e h1:vm/drWAcmRcOAAheTH5gO+/oymQ/Vjz+Xg9aXj0rF8U=
+github.com/tomasliu-agora/rtm2-base v0.0.0-20230416090455-1d6c8f3ba61e/go.mod h1:g6DXT0Xrpjdn6/sODckMvJE22d/on/ojPGCsgzS49+g=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.9.0 h1:ECmE8Bn/WFTYwEW/bpKD3M8VtR/zQVbavAoalC1PYyE=
 go.uber.org/atomic v1.9.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=

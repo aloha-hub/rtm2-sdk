@@ -7,7 +7,8 @@ import (
 	"github.com/tomasliu-agora/rtm2"
 	base "github.com/tomasliu-agora/rtm2-base"
 	"go.uber.org/zap"
-	"sync"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"time"
 )
 
@@ -27,7 +28,8 @@ type rtmInvoker struct {
 
 	errorChan chan<- error
 
-	lg *zap.Logger
+	lg  *zap.Logger
+	cli rtm2.RTMClient
 }
 
 func (i *rtmInvoker) onResponse(uri int32, errCode int32, message []byte) error {
@@ -96,6 +98,14 @@ func (i *rtmInvoker) onResponse(uri int32, errCode int32, message []byte) error 
 			return err
 		}
 		i.callback.OnEvent(event)
+	case UriTokenPrivilegeExpire:
+		event := &base.TokenPrivilegeExpire{}
+		err := event.Unmarshal(message)
+		if err != nil {
+			i.lg.Error("Failed to unmarshal", zap.Error(err))
+			return err
+		}
+		i.callback.OnEvent(event)
 	default:
 		i.lg.Warn("unknown event", zap.Int32("uri", uri), zap.Int32("errCode", errCode))
 	}
@@ -151,7 +161,7 @@ func (i *rtmInvoker) receive(rc <-chan *Header) (*Header, error) {
 	select {
 	case h, ok := <-rc:
 		if !ok {
-			return nil, rtm2.ErrorFromCode(unknownErr)
+			return nil, ERR_DISCONNECTED
 		}
 		if h.ErrCode != 0 {
 			return nil, rtm2.ErrorFromCode(h.ErrCode)
@@ -159,7 +169,7 @@ func (i *rtmInvoker) receive(rc <-chan *Header) (*Header, error) {
 		return h, nil
 	case <-time.After(time.Second * 5):
 		i.lg.Info("timeout")
-		return nil, rtm2.ErrorFromCode(unknownErr)
+		return nil, ERR_TIMEOUT
 	}
 }
 
@@ -168,10 +178,10 @@ func (i *rtmInvoker) SetCallback(callback base.InvokeCallback) {
 }
 
 func (i *rtmInvoker) PreLogin() {
-	params := gClient.GetParameters()
+	params := i.cli.GetParameters()
 	if value, ok := params[kParamSidecarEndpoint]; ok {
 		endpoint := value.(string)
-		i.conn = NewConnection(i.ctx, i.lg, endpoint, gInvoker)
+		i.conn = NewConnection(i.ctx, i.lg, endpoint, i)
 		i.conn.Start()
 	} else {
 		var (
@@ -190,7 +200,7 @@ func (i *rtmInvoker) PreLogin() {
 			execPath = p.(string)
 		}
 		i.sidecar = createSidecar(i.ctx, i.lg, execPath, port)
-		i.conn = NewConnection(i.ctx, i.lg, fmt.Sprintf("127.0.0.1:%d", port), gInvoker)
+		i.conn = NewConnection(i.ctx, i.lg, fmt.Sprintf("127.0.0.1:%d", port), i)
 		go i.loop()
 		i.conn.Start()
 	}
@@ -230,15 +240,32 @@ func (i *rtmInvoker) loop() {
 	}
 }
 
-func CreateRTM2Client(ctx context.Context, config rtm2.RTMConfig, errChan chan<- error) rtm2.RTMClient {
-	gMtx.Lock()
-	defer gMtx.Unlock()
-	if gClient == nil {
-		c, cancel := context.WithCancel(ctx)
-		// sidecar := createSidecar(c, lg, "./", defaultServerPort)
-		gInvoker = &rtmInvoker{ctx: c, cancel: cancel, sidecar: nil, lg: config.Logger, errorChan: errChan}
-		// go gInvoker.loop()
-		gClient = base.CreateRTMClient(ctx, config, gInvoker)
+func initLogger(config rtm2.RTMConfig) {
+	if config.Logger != nil {
+		return
 	}
-	return gClient
+	lcfg := zap.NewProductionConfig()
+	if len(config.FilePath) == 0 {
+		lcfg.Level.SetLevel(zapcore.InfoLevel)
+		config.Logger, _ = lcfg.Build()
+	} else {
+		l := &lumberjack.Logger{
+			Filename:  config.FilePath,
+			MaxSize:   50,
+			MaxAge:    2,
+			LocalTime: true,
+			Compress:  true,
+		}
+		core := zapcore.NewCore(zapcore.NewJSONEncoder(lcfg.EncoderConfig), zapcore.AddSync(zapcore.AddSync(l)), zapcore.DebugLevel)
+		config.Logger = zap.New(zapcore.NewTee(core), zap.AddCaller())
+	}
+}
+
+func CreateRTM2Client(ctx context.Context, config rtm2.RTMConfig, errChan chan<- error) rtm2.RTMClient {
+	c, cancel := context.WithCancel(ctx)
+	initLogger(config)
+	inv := &rtmInvoker{ctx: c, cancel: cancel, sidecar: nil, lg: config.Logger, errorChan: errChan}
+	cli := base.CreateRTMClient(ctx, config, inv)
+	inv.cli = cli
+	return cli
 }
