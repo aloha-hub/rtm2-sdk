@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
+	"strings"
 	"time"
 )
 
@@ -243,8 +244,15 @@ func initLogger(config *rtm2.RTMConfig) {
 		lcfg.Level.SetLevel(zapcore.InfoLevel)
 		config.Logger, _ = lcfg.Build()
 	} else {
+		filePath := config.FilePath
+		if strings.HasSuffix(filePath, ".log") {
+			filePath = filePath[:len(filePath)-4] + ".go.log"
+		} else {
+			filePath = filePath + "/rtm.go.log"
+			config.FilePath = config.FilePath + "/rtm.log"
+		}
 		l := &lumberjack.Logger{
-			Filename:  config.FilePath,
+			Filename:  filePath,
 			MaxSize:   50,
 			MaxAge:    2,
 			LocalTime: true,
