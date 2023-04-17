@@ -88,3 +88,18 @@ go build
 ```
 
 当发现日志中输出：`connected	{"endpoint": "127.0.0.1:7001"}`时，说明基本功能正常
+
+# 日志管理
+
+- 默认rtm支持zap库，可以直接传入*zap.Logger
+- `RTMConfig`中可以设置FilePath
+  - 如果不设置FilePath：
+    - 底层C++进程将不输出日志
+    - Golang层会自动创建Logger，默认输出在`stdout`中
+  - 如果设置FilePath：
+    - 如果设置的路径为文件，如：`/tmp/rtm.log`
+      - Golang层会自动将日志写入到`/tmp/rtm.go.log`中
+      - C++层会将日志写入`/tmp/rtm.log`
+    - 如果设置的路径为目录，如: `/tmp/agora`
+      - Golang层会自动将日志写入`/tmp/agora/rtm.go.log`
+      - C++层会将日志写入`/tmp/agora/rtm.log`
