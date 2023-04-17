@@ -12,12 +12,6 @@ import (
 	"time"
 )
 
-var (
-	gMtx     sync.Mutex
-	gInvoker *rtmInvoker
-	gClient  rtm2.RTMClient
-)
-
 type rtmInvoker struct {
 	ctx    context.Context
 	cancel context.CancelFunc
