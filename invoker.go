@@ -234,7 +234,7 @@ func (i *rtmInvoker) loop() {
 	}
 }
 
-func initLogger(config rtm2.RTMConfig) {
+func initLogger(config *rtm2.RTMConfig) {
 	if config.Logger != nil {
 		return
 	}
@@ -257,7 +257,7 @@ func initLogger(config rtm2.RTMConfig) {
 
 func CreateRTM2Client(ctx context.Context, config rtm2.RTMConfig, errChan chan<- error) rtm2.RTMClient {
 	c, cancel := context.WithCancel(ctx)
-	initLogger(config)
+	initLogger(&config)
 	inv := &rtmInvoker{ctx: c, cancel: cancel, sidecar: nil, lg: config.Logger, errorChan: errChan}
 	cli := base.CreateRTMClient(ctx, config, inv)
 	inv.cli = cli
