@@ -99,7 +99,114 @@ channel = nil
 // 登出
 client.Logout()
 ```
+# 异常场景处理
+```go
+	var client rtm2.RTMClient
+	var rtmLoginToken string
+	lcfg := zap.NewDevelopmentConfig()
+	lcfg.Level.SetLevel(zapcore.InfoLevel)
+	lg, _ := lcfg.Build()
+	config := rtm2.RTMConfig{
+		Appid:          testDynamicAppId,
+		UserId:         *uid,
+		Logger:         lg,
+		FilePath:       *logPath,
+		// RequestTimeout: 15 * 1000,  // 设置请求超时时间（默认10s)
+	}
+	for {
+		ctx, cancel := context.WithCancel(context.Background())
+		errChan := make(chan error, 10)
+		client = CreateRTM2Client(ctx, config, errChan)
+		// 生成login token
+		rtmLoginToken = GenToken(testDynamicAppId, testDynamicCert, *uid, GenRandomStr(10), "60")
 
+		if *useSidecar {
+			client.SetParameters(map[string]interface{}{kParamSidecarPort: int32(*sidecarPort)})
+			client.SetParameters(map[string]interface{}{kParamSidecarPath: *sidecarPath})
+		} else {
+			client.SetParameters(map[string]interface{}{kParamSidecarEndpoint: *edp})
+		}
+		connectionStateChannel, tc, err := client.Login(rtmLoginToken)
+		if err != nil {
+			lg.Error("fail to login", zap.Error(err))
+			continue
+		}
+		// 监听error channel 事件
+		// 监听connection state change事件
+		// 监听login token过期事件
+		go func() {
+			for {
+				select {
+				case eve := <-connectionStateChannel:
+					lg.Info("on connection state change", zap.Any("state", eve))
+					switch eve.State {
+					case rtm2.ConnectionStateFAILED:
+						// 需要logout后重新创建rtm client
+						_ = client.Logout()
+						cancel()
+						return
+					default:
+						// 不做处理
+					}
+				case err := <-errChan:
+					// 收到err channel的error,说明可能存在rtm2-wrapper崩溃的情况，不能恢复，需要重建
+					lg.Error("recv error from error channel, recreate rtm client", zap.Error(err))
+					_ = client.Logout()
+					cancel()
+					return
+				case channel := <-tc:
+					// 收到token will expire事件时需要及时renew token
+					// 当channel为空时，表示是login token过期，若不为空表示的是stream channel token过期
+					// 此示例演示renew login token
+					lg.Info("token will expire! try renew token", zap.String("channel", channel))
+					rtmLoginToken = GenToken(testDynamicAppId, testDynamicCert, *uid, GenRandomStr(10), "60")
+					err := client.RenewToken(rtmLoginToken)
+					if err != nil {
+						lg.Error("fail to renew token", zap.Error(err))
+					} else {
+						lg.Info("renew token success")
+					}
+				}
+			}
+
+		}()
+		// 处理业务逻辑....
+		_, c, err := client.Storage().SubscribeUserMetadata(*uid)
+		if err != nil {
+			lg.Fatal("fail to subscribe user metadata")
+		}
+		setTimer := time.NewTimer(time.Second)
+		cnt := 0
+		quit := false
+		for !quit {
+			select {
+			case <-ctx.Done():
+				// logout后所有channel都不可用，需要重新订阅
+				lg.Info("context done")
+				quit = true
+				break
+			case eve := <-c:
+				lg.Info("on user metadata event", zap.Any("event", eve))
+			case <-setTimer.C:
+				data := map[string]*rtm2.MetadataItem{
+					"name": {
+						Key:      "name",
+						Value:    *uid + strconv.FormatInt(int64(cnt), 10),
+						Revision: -1,
+					},
+				}
+				if err := client.Storage().SetUserMetadata(*uid, data, rtm2.WithStorageMajorRev(-1), rtm2.WithStorageRecordAuthor(true), rtm2.WithStorageRecordTs(true)); err != nil {
+					lg.Error("fail to set user meta data", zap.Error(err))
+				} else {
+					lg.Info("set user meta data success")
+				}
+				cnt++
+				setTimer.Reset(time.Second)
+			}
+		}
+	}
+
+```
 # 开发注意事项
 
 - 一条 RTM 消息可以是字符串或者二进制数据，你需要在业务层自行区分消息负载格式。为更灵活地实现你的业务，你也可以使用 JSON 等其他方式来构建你的负载格式，此时，你需要确保转交给 RTM 的消息负载已字符串序列化。
