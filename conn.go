@@ -210,7 +210,7 @@ func (c *connection) onRequest(ctx context.Context, connection netpoll.Connectio
 	if IsEvent(h.Uri) {
 		c.resp <- h
 	} else {
-		if value, ok := c.requests.Load(h.SeqId); ok {
+		if value, ok := c.requests.LoadAndDelete(h.SeqId); ok {
 			rc := value.(chan<- *Header)
 			rc <- h
 		} else {
