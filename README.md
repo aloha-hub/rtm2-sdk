@@ -34,10 +34,14 @@ import "github.com/tomasliu-agora/rtm2"
 ## 2. 初始化 RTM Client，并登录
 
 ```go
-config := &rtm2.RTMConfig{Appid: "<APP_ID>", UserId: "<RTM_USER_ID>", Logger: lg}
-client := CreateRTMClient(config)
+config := rtm2.RTMConfig{Appid: "<APP_ID>", UserId: "<RTM_USER_ID>", Logger: lg}
+ctx := context.Background()
+errChan := make(chan error, 1) // 接收错误消息，重建rtm2 client, 详情见此文档“异常场景处理”部分
+client := CreateRTM2Client(ctx, config, errChan)
 // 使用 <RTM_TOKEN> token 登录RTM
-err := client.Login("<RTM_TOKEN>")
+// eventChan : 连接事件, 详情见此文档“异常场景处理”部分
+// tokenChan : token will expire事件，详情见此文档“异常场景处理”部分
+eventChan, tokenChan, err := client.Login("<RTM_TOKEN>")
 ```
 
 ## 3. 创建 Stream Channel 并加入频道
@@ -48,7 +52,10 @@ err := client.Login("<RTM_TOKEN>")
 // 创建一个频道名为 MyChannel 的 Stream Channel
 channel := client.StreamChannel("MyChannel")
 // 加入频道
-err := channel.Join()
+// snapshot : 当前频道快照，表示当前每个topic中有哪些用户
+// topicEventChan : topic事件
+// tokenChan : channel token will expire事件通知，和login时类似
+snapshot, topicEventChan, tokenChan, err := channel.Join()
 ```
 
 ## 4. 加入频道中的 Topic 并发布消息
