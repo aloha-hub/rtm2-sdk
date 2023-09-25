@@ -139,7 +139,8 @@ go func() {
 			case <-ticker.C:
 				message := "message-p2p-message-" + strconv.FormatInt(int64(cnt), 10)
 				lg.Info("publish p2p message", zap.String("message", message))
-				if err := client.Publish(remoteUid, []byte(message), 		   	           		rtm2.WithMessageType(rtm2.MessageTypeString), rtm2.WithMessageChannelType(rtm2.ChannelTypeUser)); err != nil {
+				if err := client.Publish(remoteUid, []byte(message),rtm2.WithMessageType(rtm2.MessageTypeString), 
+					rtm2.WithMessageChannelType(rtm2.ChannelTypeUser)); err != nil {
 					lg.Error("fail to publish p2p message", zap.Error(err))
 				}
 				cnt++
