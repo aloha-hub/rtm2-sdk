@@ -122,7 +122,7 @@ go func() {
         select {
             case err := <-err:
             lg.Fatal("receive error from error channel", zap.Error(err))
-            case msg := <-mc:  // 获取点对点消息
+            case msg := <-messageChan:  // 获取点对点消息
             lg.Info("get p2p message", zap.Any("detail", msg))
         }
     }
@@ -131,21 +131,21 @@ go func() {
 // rtm2.WithMessageChannelType设置为rtm2.ChannelTypeUser表示发送点对点消息
 // Publish的channel字段填写对端uid
 go func() {
-        remoteUid := "remote"
-		ticker := time.NewTicker(time.Second)
-		cnt := 0
-		for {
-			select {
-			case <-ticker.C:
-				message := "message-p2p-message-" + strconv.FormatInt(int64(cnt), 10)
-				lg.Info("publish p2p message", zap.String("message", message))
-				if err := client.Publish(remoteUid, []byte(message),rtm2.WithMessageType(rtm2.MessageTypeString), 
-					rtm2.WithMessageChannelType(rtm2.ChannelTypeUser)); err != nil {
-					lg.Error("fail to publish p2p message", zap.Error(err))
-				}
-				cnt++
-			}
-		}
+	remoteUid := "remote"
+    ticker := time.NewTicker(time.Second)
+    cnt := 0
+    for {
+        select {
+        case <-ticker.C:
+            message := "message-p2p-message-" + strconv.FormatInt(int64(cnt), 10)
+            lg.Info("publish p2p message", zap.String("message", message))
+            if err := client.Publish(remoteUid, []byte(message),rtm2.WithMessageType(rtm2.MessageTypeString), 
+                rtm2.WithMessageChannelType(rtm2.ChannelTypeUser)); err != nil {
+                lg.Error("fail to publish p2p message", zap.Error(err))
+            }
+            cnt++
+        }
+    }
 }()
 ```
 # 异常场景处理
