@@ -270,9 +270,9 @@ func CreateRTM2Client(ctx context.Context, config rtm2.RTMConfig, errChan chan<-
 	initLogger(&config)
 	inv := &rtmInvoker{ctx: c, cancel: cancel, sidecar: nil, lg: config.Logger, errorChan: errChan}
 	if config.RequestTimeout <= 0 {
-		inv.timeout = 5 * time.Second
+		inv.timeout = 5000 * time.Millisecond
 	} else {
-		inv.timeout = time.Duration(config.RequestTimeout) * time.Second
+		inv.timeout = time.Duration(config.RequestTimeout) * time.Millisecond
 	}
 	cli := base.CreateRTMClient(ctx, config, inv)
 	inv.cli = cli
