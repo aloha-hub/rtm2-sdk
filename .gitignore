@@ -1,2 +1,5 @@
 .idea/
 vendor/
+.DS_Store
+image/.DS_Store
+image/rtm2-so/.DS_Store
